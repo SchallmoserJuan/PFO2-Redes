@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Tareas</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h1 { text-align: center; color: #333; margin-bottom: 1.5rem; }
+        .tabs { display: flex; margin-bottom: 1.5rem; border-bottom: 2px solid #eee; }
+        .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; color: #666; font-weight: 500; }
+        .tab.active { color: #007bff; border-bottom: 2px solid #007bff; margin-bottom: -2px; }
+        .form { display: none; }
+        .form.active { display: block; }
+        input { width: 100%; padding: 12px; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; }
+        button:hover { background: #0056b3; }
+        .mensaje { padding: 10px; border-radius: 6px; margin-bottom: 1rem; text-align: center; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        #tareasPanel { display: none; }
+        .tarea-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+        .tarea-item input[type="checkbox"] { width: auto; margin: 0 10px 0 0; }
+        .tarea-item.completed span { text-decoration: line-through; color: #999; }
+        .btn-tarea { padding: 8px 16px; margin: 10px 5px 0 0; background: #28a745; border: none; border-radius: 4px; color: white; cursor: pointer; }
+        .btn-tarea:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sistema de Tareas</h1>
+        
+        <div id="authPanel">
+            <div class="tabs">
+                <div class="tab active" onclick="mostrarTab('login')">Iniciar Sesión</div>
+                <div class="tab" onclick="mostrarTab('registro')">Registrarse</div>
+            </div>
+            
+            <div id="mensaje"></div>
+            
+            <form id="loginForm" class="form active" onsubmit="return handleLogin(event)">
+                <input type="text" id="loginUsuario" placeholder="Usuario" required>
+                <input type="password" id="loginPassword" placeholder="Contraseña" required>
+                <button type="submit">Iniciar Sesión</button>
+            </form>
+            
+            <form id="registroForm" class="form" onsubmit="return handleRegistro(event)">
+                <input type="text" id="regUsuario" placeholder="Usuario" required>
+                <input type="password" id="regPassword" placeholder="Contraseña" required>
+                <button type="submit">Registrarse</button>
+            </form>
+        </div>
+        
+        <div id="tareasPanel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2>Mis Tareas</h2>
+                <button onclick="logout()" style="width: auto; background: #6c757d; padding: 8px 16px;">Cerrar Sesión</button>
+            </div>
+            <div id="listaTareas"></div>
+            
+            <hr style="margin: 1.5rem 0;">
+            
+            <h3>Nueva Tarea</h3>
+            <form onsubmit="return crearTarea(event)" style="margin-top: 10px;">
+                <input type="text" id="nuevaTareaTitulo" placeholder="Título de la tarea" required>
+                <input type="text" id="nuevaTareaDesc" placeholder="Descripción (opcional)">
+                <button type="submit" class="btn-tarea">Crear Tarea</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let usuarioId = null;
+        let usuarioNombre = null;
+        
+        function mostrarTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form').forEach(f => f.classList.remove('active'));
+            if (tab === 'login') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('loginForm').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('registroForm').classList.add('active');
+            }
+            document.getElementById('mensaje').innerHTML = '';
+        }
+        
+        function showMensaje(texto, tipo) {
+            document.getElementById('mensaje').innerHTML = `<div class="mensaje ${tipo}">${texto}</div>`;
+        }
+        
+        async function handleRegistro(e) {
+            e.preventDefault();
+            const usuario = document.getElementById('regUsuario').value;
+            const password = document.getElementById('regPassword').value;
+            
+            try {
+                const res = await fetch('/registro', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({usuario, contraseña: password})
+                });
+                const data = await res.json();
+                
+                if (res.status === 201) {
+                    showMensaje(data.mensaje, 'success');
+                    setTimeout(() => mostrarTab('login'), 1500);
+                } else {
+                    showMensaje(data.error, 'error');
+                }
+            } catch (err) {
+                showMensaje('Error de conexión', 'error');
+            }
+            return false;
+        }
+        
+        async function handleLogin(e) {
+            e.preventDefault();
+            const usuario = document.getElementById('loginUsuario').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({usuario, contraseña: password})
+                });
+                const data = await res.json();
+                
+                if (res.status === 200) {
+                    usuarioId = data.usuario_id;
+                    usuarioNombre = usuario;
+                    document.getElementById('authPanel').style.display = 'none';
+                    document.getElementById('tareasPanel').style.display = 'block';
+                    cargarTareas();
+                } else {
+                    showMensaje(data.error, 'error');
+                }
+            } catch (err) {
+                showMensaje('Error de conexión', 'error');
+            }
+            return false;
+        }
+        
+        function logout() {
+            usuarioId = null;
+            usuarioNombre = null;
+            document.getElementById('authPanel').style.display = 'block';
+            document.getElementById('tareasPanel').style.display = 'none';
+            document.getElementById('loginUsuario').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+        
+        async function cargarTareas() {
+            if (!usuarioId) return;
+            
+            try {
+                const res = await fetch(`/tareas/${usuarioId}`);
+                const data = await res.json();
+                
+                if (res.status === 200 && data.tareas) {
+                    const lista = document.getElementById('listaTareas');
+                    if (data.tareas.length === 0) {
+                        lista.innerHTML = '<p style="color: #666; text-align: center;">No hay tareas</p>';
+                    } else {
+                        lista.innerHTML = data.tareas.map(t => `
+                            <div class="tarea-item ${t.completada ? 'completed' : ''}">
+                                <input type="checkbox" ${t.completada ? 'checked' : ''} 
+                                    onchange="completarTarea(${t.id})">
+                                <span>${t.titulo} - ${t.descripcion || 'Sin descripción'}</span>
+                                <button onclick="eliminarTarea(${t.id})" 
+                                    style="margin-left: auto; background: #dc3545; width: auto; padding: 4px 8px; font-size: 12px;">X</button>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (err) {
+                console.error('Error cargando tareas');
+            }
+        }
+        
+        async function crearTarea(e) {
+            e.preventDefault();
+            const titulo = document.getElementById('nuevaTareaTitulo').value;
+            const descripcion = document.getElementById('nuevaTareaDesc').value;
+            
+            try {
+                const res = await fetch('/tareas', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({usuario_id: usuarioId, titulo, descripcion})
+                });
+                
+                if (res.status === 201) {
+                    document.getElementById('nuevaTareaTitulo').value = '';
+                    document.getElementById('nuevaTareaDesc').value = '';
+                    cargarTareas();
+                }
+            } catch (err) {
+                console.error('Error creando tarea');
+            }
+            return false;
+        }
+        
+        async function completarTarea(tareaId) {
+            try {
+                await fetch(`/tareas/${tareaId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({usuario_id: usuarioId})
+                });
+                cargarTareas();
+            } catch (err) {
+                console.error('Error completando tarea');
+            }
+        }
+        
+        async function eliminarTarea(tareaId) {
+            try {
+                await fetch(`/tareas/${tareaId}?usuario_id=${usuarioId}`, {
+                    method: 'DELETE'
+                });
+                cargarTareas();
+            } catch (err) {
+                console.error('Error eliminando tarea');
+            }
+        }
+    </script>
+</body>
+</html>
