@@ -24,10 +24,10 @@ La aplicación permite:
 ---
 
 ## Capturas
-![Servidor](/PFO2-Redes/images/servidor.png.png)
-![Cliente](/PFO2-Redes/images/cliente.png)
-![ServidorWeb](/PFO2-Redes/images/servidorweb.png)
-![Base de Datos](/PFO2-Redes/images/bd.png)
+![Servidor](./images/servidor.png)
+![Cliente](./images/cliente.png)
+![ServidorWeb](./images/servidorweb.png)
+![Base de Datos](./images/bd.png)
 
 ---
 
