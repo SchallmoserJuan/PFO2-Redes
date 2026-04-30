@@ -1,4 +1,6 @@
 # Sistema de Gestión de Tareas con API REST
+<img width="1983" height="793" alt="image" src="https://github.com/user-attachments/assets/478ea4cd-72db-40f5-ad1d-5492a63c027f" />
+
 
 ## 1. Descripción del Proyecto
 
